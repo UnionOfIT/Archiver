@@ -11,11 +11,11 @@ class Archiver(wx.Frame):
         self.config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'Archiver')
         self.config_path = os.path.join(self.config_dir, 'config.json')
         self.load_config()
-        super(Archiver, self).__init__(parent, title=self.get_translation(title), size=(800, 600))
+        super(Archiver, self).__init__(parent, title=self.get_translation(title), size=(900, 700))
         self.current_directory = os.path.dirname(os.path.abspath(__file__))
         self.SetIcon(self.load_icon('archive.png', wx.ART_FILE_OPEN))
         self.panel = wx.Panel(self)
-        self.panel.SetBackgroundColour(wx.Colour(255, 255, 255))
+        self.panel.SetBackgroundColour(wx.Colour(245, 245, 245))
         self.archive_name = ""
         self.current_folder = ""
         self.create_menu()
@@ -52,10 +52,7 @@ class Archiver(wx.Frame):
 
     def load_icon(self, filename, fallback_art):
         icon_path = os.path.join(self.current_directory, filename)
-        if os.path.exists(icon_path):
-            return wx.Icon(icon_path, wx.BITMAP_TYPE_PNG)
-        else:
-            return wx.ArtProvider.GetIcon(fallback_art, wx.ART_OTHER)
+        return wx.Icon(icon_path, wx.BITMAP_TYPE_PNG) if os.path.exists(icon_path) else wx.ArtProvider.GetIcon(fallback_art, wx.ART_OTHER)
 
     def create_menu(self):
         self.menubar = wx.MenuBar()
@@ -75,18 +72,20 @@ class Archiver(wx.Frame):
 
     def update_tools_menu(self):
         self.toolsMenu = wx.Menu()
-        add_item = self.toolsMenu.Append(wx.ID_ADD, self.get_translation("Добавить файл или папку\tCtrl+A"), self.get_translation("Добавить файл или папку в архив"))
-        extract_item = self.toolsMenu.Append(wx.ID_EXECUTE, self.get_translation("Извлечь всё\tCtrl+E"), self.get_translation("Извлечь все файлы из архива"))
-        extract_selected_item = self.toolsMenu.Append(wx.ID_ANY, self.get_translation("Извлечь выбранное\tCtrl+Shift+E"), self.get_translation("Извлечь выбранный файл"))
-        create_folder_item = self.toolsMenu.Append(wx.ID_ANY, self.get_translation("Создать папку"), self.get_translation("Создать папку в архиве"))
-        feedback_item = self.toolsMenu.Append(wx.ID_ANY, self.get_translation("Обратная связь"), self.get_translation("Связь с разработчиком"))
-        settings_item = self.toolsMenu.Append(wx.ID_ANY, self.get_translation("Настройки"), self.get_translation("Настройки приложения"))
-        self.Bind(wx.EVT_MENU, self.on_open_settings, id=settings_item.GetId())
-        self.Bind(wx.EVT_MENU, self.on_add_file_or_folder, id=add_item.GetId())
-        self.Bind(wx.EVT_MENU, self.on_extract_all, id=extract_item.GetId())
-        self.Bind(wx.EVT_MENU, self.on_extract_selected, id=extract_selected_item.GetId())
-        self.Bind(wx.EVT_MENU, self.on_create_folder, id=create_folder_item.GetId())
-        self.Bind(wx.EVT_MENU, self.on_feedback, id=feedback_item.GetId())
+        self.toolsMenu.Append(wx.ID_ADD, self.get_translation("Добавить файл или папку\tCtrl+A"), self.get_translation("Добавить файл или папку в архив"))
+        self.toolsMenu.Append(wx.ID_EXECUTE, self.get_translation("Извлечь всё\tCtrl+E"), self.get_translation("Извлечь все файлы из архива"))
+        self.toolsMenu.Append(wx.ID_ANY, self.get_translation("Извлечь выбранное\tCtrl+Shift+E"), self.get_translation("Извлечь выбранный файл"))
+        self.toolsMenu.Append(wx.ID_ANY, self.get_translation("Создать папку"), self.get_translation("Создать папку в архиве"))
+        self.toolsMenu.Append(wx.ID_ANY, self.get_translation("Обратная связь"), self.get_translation("Связь с разработчиком"))
+        self.toolsMenu.Append(wx.ID_ANY, self.get_translation("Настройки"), self.get_translation("Настройки приложения"))
+        
+        self.Bind(wx.EVT_MENU, self.on_open_settings, id=self.toolsMenu.FindItemByPosition(5).GetId())
+        self.Bind(wx.EVT_MENU, self.on_add_file_or_folder, id=self.toolsMenu.FindItemByPosition(0).GetId())
+        self.Bind(wx.EVT_MENU, self.on_extract_all, id=self.toolsMenu.FindItemByPosition(1).GetId())
+        self.Bind(wx.EVT_MENU, self.on_extract_selected, id=self.toolsMenu.FindItemByPosition(2).GetId())
+        self.Bind(wx.EVT_MENU, self.on_create_folder, id=self.toolsMenu.FindItemByPosition(3).GetId())
+        self.Bind(wx.EVT_MENU, self.on_feedback, id=self.toolsMenu.FindItemByPosition(4).GetId())
+        
         self.menubar.Append(self.toolsMenu, self.get_translation("Инструменты"))
 
     def create_toolbar(self):
@@ -96,10 +95,13 @@ class Archiver(wx.Frame):
         toolbar.AddTool(wx.ID_OPEN, self.get_translation("Открыть"), wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN, wx.ART_TOOLBAR))
         toolbar.AddTool(wx.ID_ADD, self.get_translation("Добавить"), wx.ArtProvider.GetBitmap(wx.ART_PLUS, wx.ART_TOOLBAR))
         toolbar.AddTool(wx.ID_EXECUTE, self.get_translation("Извлечь"), wx.ArtProvider.GetBitmap(wx.ART_EXECUTABLE_FILE, wx.ART_TOOLBAR))
+        
         search_tool_icon = wx.ArtProvider.GetBitmap(wx.ART_FIND, wx.ART_TOOLBAR)
         search_tool = toolbar.AddTool(wx.ID_ANY, self.get_translation("Поиск"), search_tool_icon, shortHelp=self.get_translation("Поиск файла в архиве"))
+        
         delete_tool_icon = self.load_icon('delete.png', wx.ART_DELETE)
         delete_tool = toolbar.AddTool(wx.ID_ANY, self.get_translation("Удалить"), delete_tool_icon, shortHelp=self.get_translation("Удалить выбранный файл"))
+        
         toolbar.Realize()
         self.Bind(wx.EVT_TOOL, self.on_create_archive, id=wx.ID_NEW)
         self.Bind(wx.EVT_TOOL, self.on_select_archive, id=wx.ID_OPEN)
@@ -268,366 +270,6 @@ class Archiver(wx.Frame):
                 "Файлы извлечены в": "Files extracted to",
                 "Вы уверены, что хотите удалить": "Are you sure you want to delete",
                 "файл(ов)?": "file(s)?"
-            },
-            'fr': {
-                "Имя файла/папки": "Nom de fichier/dossier",
-                "Размер": "Taille",
-                "Дата изменения": "Date modifiée",
-                "Готово": "Prêt",
-                "Обратная связь": "Retour",
-                "Выбор": "Sélection",
-                "Поиск файла": "Recherche de fichier",
-                "Удаление": "Suppression",
-                "Файлы загружены из": "Fichiers chargés depuis",
-                "Файлы добавлены в архив.": "Fichiers ajoutés à l'archive.",
-                "Файл не найден.": "Fichier non trouvé.",
-                "Настройки": "Paramètres",
-                "Новый архив\tCtrl+N": "Nouvelle archive\tCtrl+N",
-                "Открыть архив\tCtrl+O": "Ouvrir l'archive\tCtrl+O",
-                "Выход\tCtrl+Q": "Sortie\tCtrl+Q",
-                "Файл": "Fichier",
-                "Добавить файл или папку\tCtrl+A": "Ajouter un fichier ou dossier\tCtrl+A",
-                "Извлечь всё\tCtrl+E": "Tout extraire\tCtrl+E",
-                "Извлечь выбранное\tCtrl+Shift+E": "Extraire sélectionné\tCtrl+Shift+E",
-                "Создать папку": "Créer un dossier",
-                "Инструменты": "Outils",
-                "Новый": "Nouveau",
-                "Открыть": "Ouvrir",
-                "Добавить": "Ajouter",
-                "Извлечь": "Extraire",
-                "Поиск": "Recherche",
-                "Удалить": "Supprimer",
-                "Поиск файла в архиве": "Recherche de fichier dans l'archive",
-                "Удалить выбранный файл": "Supprimer le fichier sélectionné",
-                "Ошибка сохранения конфига: ": "Erreur lors de l'enregistrement de la config: ",
-                "Некорректный zip файл.": "Fichier zip invalide.",
-                "Сначала откройте архив.": "Ouvrez d'abord l'archive.",
-                "Выберите хотя бы один файл для извлечения.": "Sélectionnez au moins un fichier à extraire.",
-                "Выберите файл для удаления.": "Sélectionnez un fichier à supprimer.",
-                "Файлы удалены.": "Fichiers supprimés.",
-                "Папка и файлы добавлены в архив.": "Dossier et fichiers ajoutés à l'archive.",
-                "Введите имя файла для поиска:": "Entrez le nom du fichier à rechercher:",
-                "Создать новый архив": "Créer une nouvelle archive",
-                "Открыть существующий архив": "Ouvrir une archive existante",
-                "Выход из приложения": "Quitter l'application",
-                "Связь с разработчиком": "Contacter le développeur",
-                "Настройки приложения": "Paramètres de l'application",
-                "Архиватор": "Archiveur",
-                "Выберите язык:": "Sélectionnez la langue:",
-                "Настройки языка": "Paramètres de langue",
-                "Язык изменен. Программа будет перезапущена.": "Langue modifiée. L'application va redémarrer.",
-                "Информация": "Information",
-                "Ошибка": "Erreur",
-                "Добавить файл или папку в архив": "Ajouter un fichier ou dossier à l'archive",
-                "Извлечь все файлы из архива": "Extraire tous les fichiers de l'archive",
-                "Извлечь выбранный файл": "Extraire le fichier sélectionné",
-                "Создать папку в архиве": "Créer un dossier dans l'archive",
-                "Введите имя папки:": "Entrez le nom du dossier:",
-                "Создание папки": "Création de dossier",
-                "Папка": "Dossier",
-                "создана.": "créé.",
-                "Выберите архив": "Sélectionnez l'archive",
-                "Открыт архив:": "Archive ouverte:",
-                "Создать архив": "Créer une archive",
-                "Создание архива:": "Création de l'archive:",
-                "Архив": "Archive",
-                "создан.": "créée.",
-                "Добавить файл (OK) или папку (Cancel)?": "Ajouter un fichier (OK) ou un dossier (Annuler)?",
-                "Выберите файл для добавления": "Sélectionnez le fichier à ajouter",
-                "Выберите папку для добавления": "Sélectionnez le dossier à ajouter",
-                "Выберите папку для извлечения": "Sélectionnez le dossier d'extraction",
-                "Все файлы извлечены в": "Tous les fichiers extraits vers",
-                "Файлы извлечены в": "Fichiers extraits vers",
-                "Вы уверены, что хотите удалить": "Êtes-vous sûr de vouloir supprimer",
-                "файл(ов)?": "fichier(s)?"
-            },
-            'zh': {
-                "Имя файла/папки": "文件/文件夹名",
-                "Размер": "大小",
-                "Дата изменения": "修改日期",
-                "Готово": "准备完毕",
-                "Обратная связь": "反馈",
-                "Выбор": "选择",
-                "Поиск файла": "搜索文件",
-                "Удаление": "删除",
-                "Файлы загружены из": "文件从...加载",
-                "Файлы добавлены в архив.": "文件已添加到档案中。",
-                "Файл не найден.": "未找到文件。",
-                "Настройки": "设置",
-                "Новый архив\tCtrl+N": "新档案\tCtrl+N",
-                "Открыть архив\tCtrl+O": "打开档案\tCtrl+O",
-                "Выход\tCtrl+Q": "退出\tCtrl+Q",
-                "Файл": "文件",
-                "Добавить файл или папку\tCtrl+A": "添加文件或文件夹\tCtrl+A",
-                "Извлечь всё\tCtrl+E": "提取全部\tCtrl+E",
-                "Извлечь выбранное\tCtrl+Shift+E": "提取所选项\tCtrl+Shift+E",
-                "Создать папку": "创建文件夹",
-                "Инструменты": "工具",
-                "Новый": "新建",
-                "Открыть": "打开",
-                "Добавить": "添加",
-                "Извлечь": "提取",
-                "Поиск": "搜索",
-                "Удалить": "删除",
-                "Поиск файла в архиве": "在档案中搜索文件",
-                "Удалить выбранный файл": "删除所选文件",
-                "Ошибка сохранения конфига: ": "保存配置时出错: ",
-                "Некорректный zip файл.": "无效的zip文件。",
-                "Сначала откройте архив.": "请先打开档案。",
-                "Выберите хотя бы один файл для извлечения.": "请选择至少一个要提取的文件。",
-                "Выберите файл для удаления.": "请选择要删除的文件。",
-                "Файлы удалены.": "文件已删除。",
-                "Папка и файлы добавлены в архив.": "文件夹和文件已添加到档案中。",
-                "Введите имя файла для поиска:": "输入要搜索的文件名:",
-                "Создать новый архив": "创建新档案",
-                "Открыть существующий архив": "打开现有档案",
-                "Выход из приложения": "退出应用程序",
-                "Связь с разработчиком": "联系开发者",
-                "Настройки приложения": "应用程序设置",
-                "Архиватор": "档案管理器",
-                "Выберите язык:": "选择语言：",
-                "Настройки языка": "语言设置",
-                "Язык изменен. Программа будет перезапущена.": "语言已更改。应用程序将重新启动。",
-                "Информация": "信息",
-                "Ошибка": "错误",
-                "Добавить файл или папку в архив": "添加文件或文件夹到档案",
-                "Извлечь все файлы из архива": "从档案中提取所有文件",
-                "Извлечь выбранный файл": "提取所选文件",
-                "Создать папку в архиве": "在档案中创建文件夹",
-                "Введите имя папки:": "输入文件夹名称：",
-                "Создание папки": "创建文件夹",
-                "Папка": "文件夹",
-                "создана.": "已创建。",
-                "Выберите архив": "选择档案",
-                "Открыт архив:": "已打开档案：",
-                "Создать архив": "创建档案",
-                "Создание архива:": "创建档案：",
-                "Архив": "档案",
-                "создан.": "已创建。",
-                "Добавить файл (OK) или папку (Cancel)?": "添加文件（确定）或文件夹（取消）？",
-                "Выберите файл для добавления": "选择要添加的文件",
-                "Выберите папку для добавления": "选择要添加的文件夹",
-                "Выберите папку для извлечения": "选择提取目标文件夹",
-                "Все файлы извлечены в": "所有文件已提取到",
-                "Файлы извлечены в": "文件已提取到",
-                "Вы уверены, что хотите удалить": "您确定要删除",
-                "файл(ов)?": "个文件吗？"
-            },
-            'ja': {
-                "Имя файла/папки": "ファイル/フォルダー名",
-                "Размер": "サイズ",
-                "Дата изменения": "変更日",
-                "Готово": "準備完了",
-                "Обратная связь": "フィードバック",
-                "Выбор": "選択",
-                "Поиск файла": "ファイル検索",
-                "Удаление": "削除",
-                "Файлы загружены из": "ファイルが読み込まれました",
-                "Файлы добавлены в архив.": "ファイルがアーカイブに追加されました。",
-                "Файл не найден.": "ファイルが見つかりません。",
-                "Настройки": "設定",
-                "Новый архив\tCtrl+N": "新しいアーカイブ\tCtrl+N",
-                "Открыть архив\tCtrl+O": "アーカイブを開く\tCtrl+O",
-                "Выход\tCtrl+Q": "終了\tCtrl+Q",
-                "Файл": "ファイル",
-                "Добавить файл или папку\tCtrl+A": "ファイルまたはフォルダーを追加\tCtrl+A",
-                "Извлечь всё\tCtrl+E": "すべて抽出\tCtrl+E",
-                "Извлечь выбранное\tCtrl+Shift+E": "選択を抽出\tCtrl+Shift+E",
-                "Создать папку": "フォルダーを作成",
-                "Инструменты": "ツール",
-                "Новый": "新しい",
-                "Открыть": "開く",
-                "Добавить": "追加",
-                "Извлечь": "抽出",
-                "Поиск": "検索",
-                "Удалить": "削除",
-                "Поиск файла в архиве": "アーカイブ内のファイルを検索",
-                "Удалить выбранный файл": "選択したファイルを削除",
-                "Ошибка сохранения конфига: ": "設定の保存中にエラーが発生しました: ",
-                "Некорректный zip файл.": "無効なzipファイル。",
-                "Сначала откройте архив.": "まずアーカイブを開いてください。",
-                "Выберите хотя бы один файл для извлечения.": "抽出するファイルを1つ以上選択してください。",
-                "Выберите файл для удаления.": "削除するファイルを選択してください。",
-                "Файлы удалены.": "ファイルが削除されました。",
-                "Папка и файлы добавлены в архив.": "フォルダーとファイルがアーカイブに追加されました。",
-                "Введите имя файла для поиска:": "検索するファイル名を入力してください:",
-                "Создать новый архив": "新しいアーカイブを作成",
-                "Открыть существующий архив": "既存のアーカイブを開く",
-                "Выход из приложения": "アプリケーションを終了",
-                "Связь с разработчиком": "開発者に連絡",
-                "Настройки приложения": "アプリケーション設定",
-                "Архиватор": "アーカイバー",
-                "Выберите язык:": "言語を選択：",
-                "Настройки языка": "言語設定",
-                "Язык изменен. Программа будет перезапущена.": "言語が変更されました。アプリケーションを再起動します。",
-                "Информация": "情報",
-                "Ошибка": "エラー",
-                "Добавить файл или папку в архив": "アーカイブにファイルまたはフォルダーを追加",
-                "Извлечь все файлы из архива": "アーカイブからすべてのファイルを抽出",
-                "Извлечь выбранный файл": "選択したファイルを抽出",
-                "Создать папку в архиве": "アーカイブ内にフォルダーを作成",
-                "Введите имя папки:": "フォルダー名を入力：",
-                "Создание папки": "フォルダーの作成",
-                "Папка": "フォルダー",
-                "создана.": "が作成されました。",
-                "Выберите архив": "アーカイブを選択",
-                "Открыт архив:": "開いたアーカイブ：",
-                "Создать архив": "アーカイブを作成",
-                "Создание архива:": "アーカイブの作成：",
-                "Архив": "アーカイブ",
-                "создан.": "が作成されました。",
-                "Добавить файл (OK) или папку (Cancel)?": "ファイル（OK）またはフォルダー（キャンセル）を追加？",
-                "Выберите файл для добавления": "追加するファイルを選択",
-                "Выберите папку для добавления": "追加するフォルダーを選択",
-                "Выберите папку для извлечения": "抽出先フォルダーを選択",
-                "Все файлы извлечены в": "すべてのファイルが次の場所に抽出されました：",
-                "Файлы извлечены в": "ファイルが次の場所に抽出されました：",
-                "Вы уверены, что хотите удалить": "本当に削除しますか",
-                "файл(ов)?": "個のファイル？"
-            },
-            'es': {
-                "Имя файла/папки": "Nombre de archivo/carpeta",
-                "Размер": "Tamaño",
-                "Дата изменения": "Fecha de modificación",
-                "Готово": "Listo",
-                "Обратная связь": "Comentarios",
-                "Выбор": "Selección",
-                "Поиск файла": "Buscar archivo",
-                "Удаление": "Eliminación",
-                "Файлы загружены из": "Archivos cargados de",
-                "Файлы добавлены в архив.": "Archivos añadidos al archivo.",
-                "Файл не найден.": "Archivo no encontrado.",
-                "Настройки": "Configuraciones",
-                "Новый архив\tCtrl+N": "Nuevo archivo\tCtrl+N",
-                "Открыть архив\tCtrl+O": "Abrir archivo\tCtrl+O",
-                "Выход\tCtrl+Q": "Salir\tCtrl+Q",
-                "Файл": "Archivo",
-                "Добавить файл или папку\tCtrl+A": "Agregar archivo o carpeta\tCtrl+A",
-                "Извлечь всё\tCtrl+E": "Extraer todo\tCtrl+E",
-                "Извлечь выбранное\tCtrl+Shift+E": "Extraer seleccionado\tCtrl+Shift+E",
-                "Создать папку": "Crear carpeta",
-                "Инструменты": "Herramientas",
-                "Новый": "Nuevo",
-                "Открыть": "Abrir",
-                "Добавить": "Agregar",
-                "Извлечь": "Extraer",
-                "Поиск": "Buscar",
-                "Удалить": "Eliminar",
-                "Поиск файла в архиве": "Buscar archivo en el archivo",
-                "Удалить выбранный файл": "Eliminar archivo seleccionado",
-                "Ошибка сохранения конфига: ": "Error al guardar la configuración: ",
-                "Некорректный zip файл.": "Archivo zip inválido.",
-                "Сначала откройте архив.": "Primero abre el archivo.",
-                "Выберите хотя бы один файл для извлечения.": "Seleccione al menos un archivo para extraer.",
-                "Выберите файл для удаления.": "Seleccione un archivo para eliminar.",
-                "Файлы удалены.": "Archivos eliminados.",
-                "Папка и файлы добавлены в архив.": "Carpeta y archivos añadidos al archivo.",
-                "Введите имя файла для поиска:": "Ingrese el nombre del archivo a buscar:",
-                "Создать новый архив": "Crear nuevo archivo",
-                "Открыть существующий архив": "Abrir archivo existente",
-                "Выход из приложения": "Salir de la aplicación",
-                "Связь с разработчиком": "Contactar al desarrollador",
-                "Настройки приложения": "Configuración de la aplicación",
-                "Архиватор": "Archivador",
-                "Выберите язык:": "Seleccione el idioma:",
-                "Настройки языка": "Configuración de idioma",
-                "Язык изменен. Программа будет перезапущена.": "Idioma cambiado. La aplicación se reiniciará.",
-                "Информация": "Información",
-                "Ошибка": "Error",
-                "Добавить файл или папку в архив": "Agregar archivo o carpeta al archivo",
-                "Извлечь все файлы из архива": "Extraer todos los archivos del archivo",
-                "Извлечь выбранный файл": "Extraer archivo seleccionado",
-                "Создать папку в архиве": "Crear carpeta en el archivo",
-                "Введите имя папки:": "Ingrese el nombre de la carpeta:",
-                "Создание папки": "Crear carpeta",
-                "Папка": "Carpeta",
-                "создана.": "creada.",
-                "Выберите архив": "Seleccionar archivo",
-                "Открыт архив:": "Archivo abierto:",
-                "Создать архив": "Crear archivo",
-                "Создание архива:": "Creando archivo:",
-                "Архив": "Archivo",
-                "создан.": "creado.",
-                "Добавить файл (OK) или папку (Cancel)?": "¿Agregar archivo (OK) o carpeta (Cancelar)?",
-                "Выберите файл для добавления": "Seleccione archivo para agregar",
-                "Выберите папку для добавления": "Seleccione carpeta para agregar",
-                "Выберите папку для извлечения": "Seleccione carpeta para extraer",
-                "Все файлы извлечены в": "Todos los archivos extraídos en",
-                "Файлы извлечены в": "Archivos extraídos en",
-                "Вы уверены, что хотите удалить": "¿Está seguro de que desea eliminar",
-                "файл(ов)?": "archivo(s)?"
-            },
-            'be': {
-                "Имя файла/папки": "Імя файла/папкі",
-                "Размер": "Памер",
-                "Дата изменения": "Дата змены",
-                "Готово": "Гатова",
-                "Обратная связь": "Зваротная сувязь",
-                "Выбор": "Выбар",
-                "Поиск файла": "Пошук файла",
-                "Удаление": "Выдаленне",
-                "Файлы загружены из": "Файлы загружаны з",
-                "Файлы добавлены в архив.": "Файлы дададзены ў архіў.",
-                "Файл не найден.": "Файл не знойдзены.",
-                "Настройки": "Налады",
-                "Новый архив\tCtrl+N": "Новы архів\tCtrl+N",
-                "Открыть архив\tCtrl+O": "Адкрыць архіў\tCtrl+O",
-                "Выход\tCtrl+Q": "Выхад\tCtrl+Q",
-                "Файл": "Файл",
-                "Добавить файл или папку\tCtrl+A": "Дадаць файл або папку\tCtrl+A",
-                "Извлечь всё\tCtrl+E": "Аднавіць усё\tCtrl+E",
-                "Извлечь выбранное\tCtrl+Shift+E": "Аднавіць выбранае\tCtrl+Shift+E",
-                "Создать папку": "Стварыць папку",
-                "Инструменты": "Інструменты",
-                "Новый": "Новы",
-                "Открыть": "Адкрыць",
-                "Добавить": "Дадаць",
-                "Извлечь": "Аднавіць",
-                "Поиск": "Пошук",
-                "Удалить": "Выдаліць",
-                "Поиск файла в архиве": "Пошук файла ў архіве",
-                "Удалить выбранный файл": "Выдаліць выбраны файл",
-                "Ошибка сохранения конфига: ": "Памылка пры захаванні канфігурацыі: ",
-                "Некорректный zip файл.": "Недапушчальны zip файл.",
-                "Сначала откройте архив.": "Спачатку адкрыйце архіў.",
-                "Выберите хотя бы один файл для извлечения.": "Выберыце прынамсі адзін файл для аднаўлення.",
-                "Выберите файл для удаления.": "Выберыце файл для выдалення.",
-                "Файлы удалены.": "Файлы выдалены.",
-                "Папка и файлы добавлены в архив.": "Папка і файлы дададзены ў архіў.",
-                "Введите имя файла для поиска:": "Увядзіце імя файла для пошуку:",
-                "Создать новый архив": "Стварыць новы архіў",
-                "Открыть существующий архив": "Адкрыць існуючы архіў",
-                "Выход из приложения": "Выхад з праграмы",
-                "Связь с разработчиком": "Сувязь з распрацоўшчыкам",
-                "Настройки приложения": "Налады праграмы",
-                "Архиватор": "Архіватар",
-                "Выберите язык:": "Выберыце мову:",
-                "Настройки языка": "Налады мовы",
-                "Язык изменен. Программа будет перезапущена.": "Мова зменена. Праграма будзе перазапушчана.",
-                "Информация": "Інфармацыя",
-                "Ошибка": "Памылка",
-                "Добавить файл или папку в архив": "Дадаць файл або папку ў архіў",
-                "Извлечь все файлы из архива": "Аднавіць усе файлы з архіва",
-                "Извлечь выбранный файл": "Аднавіць выбраны файл",
-                "Создать папку в архиве": "Стварыць папку ў архіве",
-                "Введите имя папки:": "Увядзіце імя папкі:",
-                "Создание папки": "Стварэнне папкі",
-                "Папка": "Папка",
-                "создана.": "створана.",
-                "Выберите архив": "Выберыце архіў",
-                "Открыт архив:": "Адкрыты архіў:",
-                "Создать архив": "Стварыць архіў",
-                "Создание архива:": "Стварэнне архіва:",
-                "Архив": "Архіў",
-                "создан.": "створаны.",
-                "Добавить файл (OK) или папку (Cancel)?": "Дадаць файл (OK) ці папку (Адмена)?",
-                "Выберите файл для добавления": "Выберыце файл для даданння",
-                "Выберите папку для добавления": "Выберыце папку для даданння",
-                "Выберите папку для извлечения": "Выберыце папку для аднаўлення",
-                "Все файлы извлечены в": "Усе файлы адноўлены ў",
-                "Файлы извлечены в": "Файлы адноўлены ў",
-                "Вы уверены, что хотите удалить": "Вы ўпэўнены, што жадаеце выдаліць",
-                "файл(ов)?": "файл(аў)?"
             }
         }
         return translations[self.language].get(text, text)
@@ -637,31 +279,18 @@ class Archiver(wx.Frame):
             self, 
             self.get_translation("Выберите язык:"),
             self.get_translation("Настройки языка"),
-            ["Русский", "English", "Français", "中文", "日本語", "Español", "Беларуская"]
+            ["Русский", "English"]
         )
-        current_selection = 0 if self.language == 'ru' else 1 if self.language == 'en' else 2 if self.language == 'fr' else 3 if self.language == 'zh' else 4 if self.language == 'ja' else 5 if self.language == 'es' else 6
+        current_selection = 0 if self.language == 'ru' else 1
         dialog.SetSelection(current_selection)
         if dialog.ShowModal() == wx.ID_OK:
             selection = dialog.GetStringSelection()
             old_language = self.language
-            if selection == "Русский":
-                self.language = 'ru'
-            elif selection == "English":
-                self.language = 'en'
-            elif selection == "Français":
-                self.language = 'fr'
-            elif selection == "中文":
-                self.language = 'zh'
-            elif selection == "日本語":
-                self.language = 'ja'
-            elif selection == "Español":
-                self.language = 'es'
-            elif selection == "Беларуская":
-                self.language = 'be'
+            self.language = 'ru' if selection == "Русский" else 'en'
             if old_language != self.language:
                 self.save_config()
                 dialog.Destroy()
-                msg = self.get_translation("Язык изменен. Программа будет перезапущена.") if self.language == 'ru' else "Language changed. The application will restart."
+                msg = self.get_translation("Язык изменен. Программа будет перезапущена.")
                 wx.MessageBox(msg, self.get_translation("Информация"), wx.OK | wx.ICON_INFORMATION)
                 self.Close()
                 self.restart_application()
@@ -874,7 +503,6 @@ class Archiver(wx.Frame):
                     for file_info in archive.infolist():
                         if file_info.filename.startswith(self.current_folder):
                             display_name = file_info.filename[len(self.current_folder):] if self.current_folder else file_info.filename
-                            display_name = display_name if display_name else file_info.filename
                             index = self.list_ctrl.InsertItem(self.list_ctrl.GetItemCount(), display_name)
                             if not display_name.endswith('/'):
                                 self.list_ctrl.SetItem(index, 1, str(file_info.file_size))
@@ -885,7 +513,6 @@ class Archiver(wx.Frame):
                     for file_info in archive.getmembers():
                         if file_info.name.startswith(self.current_folder):
                             display_name = file_info.name[len(self.current_folder):] if self.current_folder else file_info.name
-                            display_name = display_name if display_name else file_info.name
                             index = self.list_ctrl.InsertItem(self.list_ctrl.GetItemCount(), display_name)
                             if not display_name.endswith('/'):
                                 self.list_ctrl.SetItem(index, 1, str(file_info.size))
